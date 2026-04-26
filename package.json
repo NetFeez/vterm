@@ -1,0 +1,40 @@
+{
+  "name": "@netfeez/vterm",
+  "version": "1.0.0",
+  "description": "terminal ui and logger for node.js",
+  "type": "module",
+  "main": "build/vterm.js",
+  "exports": {
+    ".": { "import": "./build/vterm.js" },
+    "./*": { "import": "./build/*.js" }
+  },
+  "scripts": {
+    "compile": "bash scripts/compile.sh",
+    "start": "bash scripts/start.sh"
+  },
+  "author": {
+    "name": "NetFeez",
+    "email": "netfeez.dev@gmail.com",
+    "url": "https://NetFeez.github.io"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NetFeez/vterm.git"
+  },
+  "files": [
+    "build/",
+    ".gitignore",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [],
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@netfeez/common": "^2.1.0",
+    "@netfeez/common-node": "^1.0.1"
+  }
+}
