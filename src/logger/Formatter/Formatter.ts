@@ -59,16 +59,19 @@ export class Formatter extends Placeholder {
     }
 
     protected splitMessage(message: string, maxLength: number): string[] {
+        if (message.length <= maxLength && !message.includes('\n')) {
+            return [message];
+        }
+
         const originalLines = message.split(/\r?\n/);
         const lines: string[] = [];
-        const regex = new RegExp(`(?:.{1,${maxLength}}(\\s|$))|(?:.{1,${maxLength}})`, 'g');
+        
+        const regex = new RegExp(`.{1,${maxLength}}`, 'g');
 
         for (const line of originalLines) {
-            if (line.length <= maxLength) lines.push(line);
-            else {
-                const chunks = line.match(regex) || [line];
-                lines.push(...chunks.map(c => c.trim()));
-            }
+            if (line.length <= maxLength) { lines.push(line); continue; }
+            const chunks = line.match(regex) || [line];
+            lines.push(...chunks.map(c => c.trim()));
         }
         return lines;
     }
