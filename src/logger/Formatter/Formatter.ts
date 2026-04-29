@@ -6,10 +6,19 @@ export class Formatter extends Placeholder {
     protected readonly format: Formatter.Format;
     protected readonly argsEngine: ArgsCustomizes;
 
-    public constructor(options: Formatter.Options) { super();
+    public constructor(options: Formatter | Formatter.Options) { super();
+        if (options instanceof Formatter) {
+            this.format = options.format;
+            this.argsEngine = options.argsEngine;
+            return;
+        }
         this.format = Formatter.normalizeOptions(options);
         this.argsEngine = new ArgsCustomizes();
     }
+
+    public get maxLength(): number { return this.format.maxMessageLength; }
+    public set maxLength(length: number) { this.format.maxMessageLength = length; }
+
     /**
      * Executes the formatting process for a log entry. It takes the log's date, level, name, custom variables, and data arguments, and produces an array of formatted strings ready for output. The method performs the following steps:
      * 1. Transforms the data arguments into formatted strings using the argument customizers.
@@ -71,13 +80,16 @@ export class Formatter extends Placeholder {
             name = true,
             timestampFormat = '&C7[{YYYY}-{MM}-{DD}] [{HH}:{mm}:{ss}]&R',
             messageFormat = '{timestamp} {level} {name} {sep} {line}',
-            maxMessageLength = 250,
+            maxMessageLength = Formatter.getConsoleWidth() - 20,
         } = options;
 
         return { 
             timestamp, level, name, timestampFormat, 
             messageFormat, maxMessageLength
         };
+    }
+    protected static getConsoleWidth(): number {
+        return process.stdout.columns || 80;
     }
 }
 
