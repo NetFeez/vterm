@@ -4,7 +4,8 @@ import { Path } from "@netfeez/common-node";
 
 import ConsoleUI from "../ui/ConsoleUI.js";
 import LoggerStream from "./LoggerStream.js";
-import Formatter from "./Formatter.js";
+import Formatter from "./Formatter/Formatter.js";
+import Placeholder from "./Formatter/Placeholder.js";
 
 export class LoggerCore {
     protected static rootPath: string = '.logs';
@@ -56,11 +57,11 @@ export class LoggerCore {
         const {
             level = '&C6[INFO]&R', name = `&C6[${this.id}]&R`, date = new Date(),
             save = this.save, show = this.show,
-            data = [], formatter = this.formatter
+            data = [], formatter = this.formatter, placeholders = {}
         } = options;
         const now = date instanceof Date ? date : new Date(date);
         const args = Array.isArray(data) ? data : [data];
-        const lines = formatter.execute(now, level, name, ...args);
+        const lines = formatter.execute(now, level, name, placeholders, ...args);
         lines.forEach((line) => {
             if (show) console.log(ConsoleUI.formatText(line));
             if (save) this.stream.push(line + '\n');
@@ -75,6 +76,7 @@ export namespace LoggerCore {
     export type InstanceMap = Map<string, LoggerCore>;
     export interface CustomLog {
         formatter?: Formatter;
+        placeholders?: Placeholder.Placeholders;
         level?: string;
         name?: string;
         date?: Date | globalThis.Date | number;

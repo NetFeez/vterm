@@ -1,4 +1,4 @@
-import Formatter from "./Formatter.js";
+import Formatter from "./Formatter/Formatter.js";
 import LoggerCore from "./LoggerCore.js";
 
 export class Logger {
