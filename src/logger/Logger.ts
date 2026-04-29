@@ -3,32 +3,23 @@ import type Placeholder from "./Formatter/Placeholder.js";
 import Formatter from "./Formatter/Formatter.js";
 import LoggerCore from "./LoggerCore.js";
 import ConsoleUI from "../ui/ConsoleUI.js";
+import Grouper from "./Grouper.js";
 
 export class Logger {
     public static default = new Logger();
 
-    protected static defaultGroup: Logger.Group = {
-        open: "╭─", // "╮",
-        item: "│ ", // "│",
-        line: "├─", // "│",
-        stop: "╰─"  // "╯"
-    }
-
     protected readonly formatter: Formatter;
+    protected readonly grouper: Grouper;
     protected readonly core: LoggerCore;
     protected readonly name: string;
 
     public save: boolean;
     public show: boolean;
 
-    protected groups: Logger.Group[] = [];
     protected vSep: string = '-> ';
 
-    protected get prefix(): string {
-        return this.groups.map(g => g.item).join('');
-    }
     protected get sep(): string {
-        return `${this.vSep}${this.prefix}`;
+        return `${this.vSep}${this.grouper.item}`;
     }
 
     public constructor(options: Logger.Options | Logger = {}) {
@@ -38,6 +29,7 @@ export class Logger {
             this.save = options.save;
             this.show = options.show;
             this.formatter = options.formatter;
+            this.grouper = new Grouper(this.formatter)
             return;
         }
         this.core = Logger.getCore(options.logger);
@@ -45,6 +37,7 @@ export class Logger {
         this.save = options.save ?? this.core.save;
         this.show = options.show ?? this.core.show;
         this.formatter = Logger.getFormatter(this.core.formatter, options.formatter);
+        this.grouper = new Grouper(this.formatter)
     }
 
     public log(...data: any[]): void { this.send(Logger.LEVEL.LOG, ...data); }
@@ -53,47 +46,24 @@ export class Logger {
     public error(...data: any[]): void { this.send(Logger.LEVEL.ERR, ...data); }
     public debug(...data: any[]): void { this.send(Logger.LEVEL.DBG, ...data); }
 
-    public group(title?: string, options: Logger.GroupOptions = {}): void {
-        const limit = this.formatter.maxLength;
-        const currentPrefix = this.prefix;
-        const availableSpace = limit - currentPrefix.length;
 
-        const group: Logger.Group = {
-            open: this.fillPattern(options.open || Logger.defaultGroup.open, availableSpace),
-            item: options.item ?? Logger.defaultGroup.item,
-            line: this.fillPattern(options.line || Logger.defaultGroup.line, availableSpace),
-            stop: this.fillPattern(options.stop || Logger.defaultGroup.stop, availableSpace)
-        };
-
-        this.sendRaw(currentPrefix + group.open, title ? [`&C6${title}&R`] : []);
-        this.groups.push(group);
+    public group(options: Grouper.GroupOptions = {}): void {
+        this.grouper.append(options);
+        this.sendRaw(this.grouper.init, []);
     }
-    public line(level: Logger.LEVEL = Logger.LEVEL.LOG): void {
-        const group = this.groups[this.groups.length - 1];
-        if (!group) return;
-        const parentPrefix = this.groups.slice(0, -1).map(g => g.item).join('');
-        this.sendRaw(parentPrefix + group.line, [], level);
+    public line() {
+        this.sendRaw(this.grouper.line, []);
     }
     public groupEnd(): void {
-        const group = this.groups.pop();
-        if (!group) return;
-        this.sendRaw(this.prefix + group.stop, []);
+        this.sendRaw(this.grouper.stop, []);
+        this.grouper.remove();
     }
+
     protected sendRaw(separator: string, data: any[], level = Logger.LEVEL.LOG): void {
         const custom = this.getCustom(level, { sep: `${this.vSep}${separator}` });
         custom.data = data;
         this.core.customLog(custom);
     }
-    private fillPattern(symbol: string, maxLength: number): string {
-        if (symbol.length === 0 || maxLength <= 0) return '';
-        const visibleSymbol = ConsoleUI.cleanFormat(symbol);
-        const visibleLength = visibleSymbol.length;
-        if (visibleLength >= maxLength) return symbol;
-        const lastChar = visibleSymbol[visibleSymbol.length - 1];
-        const needed = maxLength - visibleLength;
-        return symbol + lastChar.repeat(needed);
-    }
-    
 
     protected send(level: Logger.LEVEL, ...data: any[]): void {
         const options = this.getCustom(level, { sep: this.sep });
@@ -167,12 +137,5 @@ export namespace Logger {
     export interface LoggerOptions extends LoggerCore.Options {
         id: string;
     }
-    export interface GroupOptions {
-        open?: string;
-        item?: string;
-        line?: string;
-        stop?: string;
-    }
-    export interface Group extends Required<GroupOptions> { }
 }
 export default Logger;
